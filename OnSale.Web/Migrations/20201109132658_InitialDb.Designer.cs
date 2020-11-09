@@ -9,7 +9,7 @@ using OnSale.Web.Data;
 namespace OnSale.Web.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20201106223348_InitialDb")]
+    [Migration("20201109132658_InitialDb")]
     partial class InitialDb
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
