@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
 namespace OnSale.Common.Entities
@@ -21,6 +22,10 @@ namespace OnSale.Common.Entities
         //si cities es null entonces devuelve 0
         //sino... devuelve las que cuenta
         public int CitiesNumber => Cities == null ? 0 : Cities.Count;
+        //para que no se guarde en la base de datos
+        [NotMapped]
+        public int IdCountry { get; set; }
+
     }
 
 }

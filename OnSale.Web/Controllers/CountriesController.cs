@@ -24,7 +24,10 @@ namespace OnSale.Web.Controllers
         {
             //devuelve una vista con una inyeccion de dependencias de context, el cual trae
             //el listado de los countries con el metodo tolistasync
-            return View(await _context.Countries.ToListAsync());
+            return View(await _context.Countries
+                //incluya el pais... con los departamentos (es como un inner join)
+                .Include(c => c.Departments)
+                .ToListAsync());
         }
 
         // GET: Countries/Details/5
@@ -36,6 +39,11 @@ namespace OnSale.Web.Controllers
             }
 
             var country = await _context.Countries
+                //incluya el pais... con los departamentos (es como un inner join)
+                .Include(c => c.Departments)
+                //despues de que incluya los departamentos, que incluya las ciudades
+                .ThenInclude(d => d.Cities)
+                //
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (country == null)
             {
@@ -175,11 +183,80 @@ namespace OnSale.Web.Controllers
             
         }
 
-       
-
-        private bool CountryExists(int id)
+        //metodo para agregar departamentos
+        //el id puede llegar null entonces se valida
+        public async Task<IActionResult> AddDepartment(int? id)
         {
-            return _context.Countries.Any(e => e.Id == id);
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            Country country = await _context.Countries.FindAsync(id);
+            if (country == null)
+            {
+                return NotFound();
+            }
+            //cuando agrego el departamento, se hace uso de la propiedad NotMapped
+            //porque ya conozco el id del country gracias a propiedad IdCountry (del modelo)
+            //
+            Department model = new Department { IdCountry = country.Id };
+            return View(model);
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddDepartment(Department department)
+        {
+            //se valida que los datos del modelo sean validos
+            if (ModelState.IsValid)
+            {
+                //busca en la base de datos
+                Country country = await _context.Countries
+                    //incluya el departamento en el pais
+                    .Include(c => c.Departments)
+                    .FirstOrDefaultAsync(c => c.Id == department.IdCountry);
+                //que el country sea null no se va a dar nunca pero es conveniente validarlo
+                if (country == null)
+                {
+                    return NotFound();
+                }
+
+                try
+                {
+                    //se pone el id 0 porque sino, lo puede tomar como una actualizacion
+                    department.Id = 0;
+                    //trae el pais y le agrega un departamento
+                    country.Departments.Add(department);
+                    _context.Update(country);
+                    await _context.SaveChangesAsync();
+                    //devolvemos a la vista Details, el cual pide un parametro...
+                    //el id del country
+                    return RedirectToAction($"{nameof(Details)}/{country.Id}");
+
+                }
+                catch (DbUpdateException dbUpdateException)
+                {
+                    //validamos que no sea un department duplicado
+                    if (dbUpdateException.InnerException.Message.Contains("duplicate"))
+                    {
+                        ModelState.AddModelError(string.Empty, "There are a record with the same name.");
+                    }
+                    else
+                    {
+                        //que el texto no este vacio
+                        ModelState.AddModelError(string.Empty, dbUpdateException.InnerException.Message);
+                    }
+                }
+                //o si pasa otra excepcion no prevista
+                catch (Exception exception)
+                {
+                    ModelState.AddModelError(string.Empty, exception.Message);
+                }
+            }
+
+            return View(department);
+        }
+
     }
 }
