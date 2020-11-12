@@ -172,6 +172,10 @@ namespace OnSale.Web.Controllers
             }
 
             var country = await _context.Countries
+                //incluya los departments
+                .Include(c => c.Departments)
+                //y las cities
+                .ThenInclude(d => d.Cities)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (country == null)
             {
@@ -257,6 +261,104 @@ namespace OnSale.Web.Controllers
 
             return View(department);
         }
+
+
+
+        //edit department
+        //donde id cambia de contexto, ya no es el country sino el department
+        public async Task<IActionResult> EditDepartment(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            Department department = await _context.Departments.FindAsync(id);
+            if (department == null)
+            {
+                return NotFound();
+            }
+            //tambien busco el pais para poder devolverlo
+            //busco el pais... cuyo departamento es igual al id del departamento que trajimos con el id
+            
+            Country country = await _context.Countries.FirstOrDefaultAsync(c => c.Departments.FirstOrDefault(d => d.Id == department.Id) != null);
+            //y le asigna el id del departamento
+            department.IdCountry = country.Id;
+           //y lo manda a la vista department
+            return View(department);
+        }
+        //mande el department en el get
+        //y vuelve en el post para poder guardar los cambios
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditDepartment(Department department)
+        {
+            //si cumple con todas las data anotation del modelo
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    //actualizo
+                    _context.Update(department);
+                    //y guardo cambios
+                    await _context.SaveChangesAsync();
+                    //y retorna a la vista  de los detalles del country
+                    return RedirectToAction($"{nameof(Details)}/{department.IdCountry}");
+
+                }
+                //y el manejo de las excepciones
+                catch (DbUpdateException dbUpdateException)
+                {
+                    if (dbUpdateException.InnerException.Message.Contains("duplicate"))
+                    {
+                        ModelState.AddModelError(string.Empty, "There are a record with the same name.");
+                    }
+                    else
+                    {
+                        ModelState.AddModelError(string.Empty, dbUpdateException.InnerException.Message);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    ModelState.AddModelError(string.Empty, exception.Message);
+                }
+            }
+            return View(department);
+        }
+
+        //delete department
+        public async Task<IActionResult> DeleteDepartment(int? id)
+        {
+            //valida que le pasaron como parametro el id
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            Department department = await _context.Departments
+                //va a incluir en la busqueda las ciudades asociadas
+                //para hacer un borrado en cascada
+                .Include(d => d.Cities)
+                //al hacer el include solo podemos buscar con el FirstOrDefaultAsync
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (department == null)
+            {
+                return NotFound();
+            }
+            //antes de borrar el departamento busco el pais al cual pertenece
+            //donde el la coleccion de countries este el department id
+            Country country = await _context.Countries.FirstOrDefaultAsync(c => c.Departments.FirstOrDefault(d => d.Id == department.Id) != null);
+            //hace el borrado
+            _context.Departments.Remove(department);
+            
+            await _context.SaveChangesAsync();
+            //y retorna a la vista details del country
+            return RedirectToAction($"{nameof(Details)}/{country.Id}");
+        }
+
+
+
 
     }
 }
