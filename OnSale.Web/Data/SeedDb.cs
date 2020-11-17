@@ -68,26 +68,26 @@ namespace OnSale.Web.Data
                 });
                 _context.Countries.Add(new Country
                 {
-                    Name = "USA",
+                    Name = "Argentina",
                     Departments = new List<Department>
                 {
                     new Department
                     {
-                        Name = "California",
+                        Name = "Buenos Aires",
                         Cities = new List<City>
                         {
-                            new City { Name = "Los Angeles" },
-                            new City { Name = "San Diego" },
-                            new City { Name = "San Francisco" }
+                            new City { Name = "La Plata" },
+                            new City { Name = "Berisso" },
+                            new City { Name = "Ensenada" }
                         }
                     },
                     new Department
                     {
-                        Name = "Illinois",
+                        Name = "La Pampa",
                         Cities = new List<City>
                         {
-                            new City { Name = "Chicago" },
-                            new City { Name = "Springfield" }
+                            new City { Name = "Santa Rosa" },
+                            new City { Name = "General Pico" }
                         }
                     }
                 }
