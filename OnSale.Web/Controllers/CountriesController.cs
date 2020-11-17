@@ -357,8 +357,167 @@ namespace OnSale.Web.Controllers
             return RedirectToAction($"{nameof(Details)}/{country.Id}");
         }
 
+        public async Task<IActionResult> DetailsDepartment(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
 
+            Department department = await _context.Departments
+                .Include(d => d.Cities)
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (department == null)
+            {
+                return NotFound();
+            }
 
+            Country country = await _context.Countries.FirstOrDefaultAsync(c => c.Departments.FirstOrDefault(d => d.Id == department.Id) != null);
+            department.IdCountry = country.Id;
+            return View(department);
+        }
+
+        //metodo para agregar ciudades a los departamentos
+        //el id que recibe como parametro corresponde al departamento que pertenece a la ciudad
+        public async Task<IActionResult> AddCity(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            Department department = await _context.Departments.FindAsync(id);
+            if (department == null)
+            {
+                return NotFound();
+            }
+            //creamos el modelo con el id precargado
+            City model = new City { IdDepartment = department.Id };
+            //y se lo mandamos a la vista para que complete el resto
+            return View(model);
+        }
+
+        [HttpPost]
+        //
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddCity(City city)
+        {
+            if (ModelState.IsValid)
+            {
+                //modificamos el departamento agregando la ciudad
+                //buscamos el departamento, le agregamos las ciudades que tiene
+                Department department = await _context.Departments
+                    .Include(d => d.Cities)
+                    .FirstOrDefaultAsync(c => c.Id == city.IdDepartment);
+                if (department == null)
+                {
+                    return NotFound();
+                }
+
+                try
+                {
+                    //y agregamos la ciudad
+                    //el id = 0 es IMPORTANTE, xq sino, lo puede tomar como una actualizacion
+                    city.Id = 0;
+                    //le agregamos la nueva ciudad
+                    department.Cities.Add(city);
+                    _context.Update(department);
+                    await _context.SaveChangesAsync();
+                    //y lo devolvemos a la vista departamentos con el id del departamento
+                    return RedirectToAction($"{nameof(DetailsDepartment)}/{department.Id}");
+
+                }
+                //y el manejo de las excepciones
+                catch (DbUpdateException dbUpdateException)
+                {
+                    if (dbUpdateException.InnerException.Message.Contains("duplicate"))
+                    {
+                        ModelState.AddModelError(string.Empty, "There are a record with the same name.");
+                    }
+                    else
+                    {
+                        ModelState.AddModelError(string.Empty, dbUpdateException.InnerException.Message);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    ModelState.AddModelError(string.Empty, exception.Message);
+                }
+            }
+
+            return View(city);
+        }
+        //editar ciudad
+        public async Task<IActionResult> EditCity(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            City city = await _context.Cities.FindAsync(id);
+            if (city == null)
+            {
+                return NotFound();
+            }
+
+            Department department = await _context.Departments.FirstOrDefaultAsync(d => d.Cities.FirstOrDefault(c => c.Id == city.Id) != null);
+            city.IdDepartment = department.Id;
+            return View(city);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditCity(City city)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    _context.Update(city);
+                    await _context.SaveChangesAsync();
+                    return RedirectToAction($"{nameof(DetailsDepartment)}/{city.IdDepartment}");
+
+                }
+                catch (DbUpdateException dbUpdateException)
+                {
+                    if (dbUpdateException.InnerException.Message.Contains("duplicate"))
+                    {
+                        ModelState.AddModelError(string.Empty, "There are a record with the same name.");
+                    }
+                    else
+                    {
+                        ModelState.AddModelError(string.Empty, dbUpdateException.InnerException.Message);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    ModelState.AddModelError(string.Empty, exception.Message);
+                }
+            }
+            return View(city);
+        }
+
+        //y el metodo para borrar ciudades
+        public async Task<IActionResult> DeleteCity(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            City city = await _context.Cities
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (city == null)
+            {
+                return NotFound();
+            }
+
+            Department department = await _context.Departments.FirstOrDefaultAsync(d => d.Cities.FirstOrDefault(c => c.Id == city.Id) != null);
+            _context.Cities.Remove(city);
+            await _context.SaveChangesAsync();
+            return RedirectToAction($"{nameof(DetailsDepartment)}/{department.Id}");
+        }
 
     }
 }

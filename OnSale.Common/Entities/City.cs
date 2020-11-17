@@ -15,7 +15,7 @@ namespace OnSale.Common.Entities
         //no modifican la base de datos
         //por lo tanto no hay que correr ninguna migracion
 
-        //
+        //para que se ignore en los objetos json
         [JsonIgnore]
         //para que no se guarde en la base de datos
         [NotMapped]
