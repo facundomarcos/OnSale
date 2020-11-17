@@ -39,7 +39,7 @@ namespace OnSale.Web
             });
 
 
-
+            services.AddTransient<SeedDb>();
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
         }
 
