@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OnSale.Web.Data;
+using OnSale.Web.Helpers;
 
 namespace OnSale.Web
 {
@@ -40,6 +41,10 @@ namespace OnSale.Web
 
 
             services.AddTransient<SeedDb>();
+            //va a inyectar el IBlobHelper como una implementacion de BlobHelper
+            services.AddScoped<IBlobHelper, BlobHelper>();
+            //va a inyectar el IConverterHelper como una implementacion de ConverterHelper
+            services.AddScoped<IConverterHelper, ConverterHelper>();
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
         }
 

@@ -26,7 +26,7 @@ namespace OnSale.Common.Entities
         //en un blob storage de azure
         public string ImageFullPath => ImageId == Guid.Empty
             ? $"https://localhost:44390/images/noimage.png"
-            : $"https://onsale.blob.core.windows.net/categories/{ImageId}";
+            : $"https://onsalefacundo.blob.core.windows.net/categories/{ImageId}";
     }
 
 }
