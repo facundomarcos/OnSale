@@ -86,6 +86,99 @@ namespace OnSale.Web.Controllers
             return View(model);
         }
 
+        //metodo editar
+        public async Task<IActionResult> Edit(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+            //recibe la categoria 
+            Category category = await _context.Categories.FindAsync(id);
+            if (category == null)
+            {
+                return NotFound();
+            }
+            //y la convierte a categoryviewmodel con el helper
+            CategoryViewModel model = _converterHelper.ToCategoryViewModel(category);
+            //que es lo que manda a la vista
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(CategoryViewModel model)
+        {
+            //cuando el objeto vuelve de la vista, se valida el modelo
+            if (ModelState.IsValid)
+            {
+                //carga la imagen si es que la tiene
+                Guid imageId = model.ImageId;
+                //y si hay una imagen nueva la cambia
+                if (model.ImageFile != null)
+                {
+                    imageId = await _blobHelper.UploadBlobAsync(model.ImageFile, "categories");
+                }
+
+                try
+                {
+                    //luego convierte la categoriviewmodel a category,
+                    //le pasa el modelo, la imagen y false para indicar que no se está creando
+                    Category category = _converterHelper.ToCategory(model, imageId, false);
+                    _context.Update(category);
+                    await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
+
+                }
+                catch (DbUpdateException dbUpdateException)
+                {
+                    if (dbUpdateException.InnerException.Message.Contains("duplicate"))
+                    {
+                        ModelState.AddModelError(string.Empty, "There are a record with the same name.");
+                    }
+                    else
+                    {
+                        ModelState.AddModelError(string.Empty, dbUpdateException.InnerException.Message);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    ModelState.AddModelError(string.Empty, exception.Message);
+                }
+            }
+
+            return View(model);
+        }
+
+        //delete
+        //to do no se pueden borrar categorias que tengan productos
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            Category category = await _context.Categories
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (category == null)
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                _context.Categories.Remove(category);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, ex.Message);
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
     }
 
 

@@ -25,7 +25,7 @@ namespace OnSale.Common.Entities
         //ImageFullPath es la dirección donde se van a almacenar fisicamente
         //en un blob storage de azure
         public string ImageFullPath => ImageId == Guid.Empty
-            ? $"https://localhost:44390/images/noimage.png"
+            ? $"https://localhost:44369/images/noimage.png"
             : $"https://onsalefacundo.blob.core.windows.net/categories/{ImageId}";
     }
 
